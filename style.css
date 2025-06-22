@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root {
+  --light-bg: #f4f4f4;
+  --light-text: #333;
+  --light-container: #ffffff;
+  --light-history: #f9f9f9;
+
+  --dark-bg: #121212;
+  --dark-text: #e0e0e0;
+  --dark-container: #1f1f1f;
+  --dark-history: #2c2c2c;
+
+  --sale-color: #5bba60;
+  --purchase-color: #5a5ab3;
+  --expense-color: #d30808;
+  --delete-btn-bg: #b33e3e;
+
+  --border-radius: 10px;
+  --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-dark: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  background: var(--light-bg);
+  color: var(--light-text);
+  transition: background 0.3s, color 0.3s;
+  line-height: 1.6;
+}
+
+.dark {
+  background: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+.container {
+  padding: 25px;
+  max-width: 420px;
+  margin: 30px auto;
+  background: var(--light-container);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.dark .container {
+  background: var(--dark-container);
+  box-shadow: var(--shadow-dark);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+form,
+.summary,
+.tips {
+  margin: 25px 0;
+}
+
+form input,
+form select {
+  width: 100%;
+  padding: 12px 15px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  border-radius: var(--border-radius);
+  border: 1px solid #ccc;
+  background: #fefefe;
+  font-size: 0.95rem;
+  transition: border 0.2s;
+}
+
+form input:focus,
+form select:focus {
+  outline: none;
+  border-color: #888;
+}
+
+form button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 5px;
+  background-color: var(--sale-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+form button:hover {
+  background-color: #489c4e;
+}
+
+#history {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+#history li {
+  background: var(--light-history);
+  padding: 15px 15px 15px 20px;
+  border-left: 5px solid;
+  margin-bottom: 10px;
+  border-radius: var(--border-radius);
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  transition: transform 0.2s;
+}
+
+#history li:hover {
+  transform: scale(1.01);
+}
+
+.dark #history li {
+  background: var(--dark-history);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+#history li.sale {
+  border-color: var(--sale-color);
+}
+
+#history li.purchase {
+  border-color: var(--purchase-color);
+}
+
+#history li.expense {
+  border-color: var(--expense-color);
+}
+
+.delete-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--delete-btn-bg);
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.delete-btn:hover {
+  background: #a13030;
+}
