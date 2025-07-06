@@ -144,7 +144,23 @@ form button:hover {
 #history li.expense {
   border-color: var(--expense-color);
 }
+#filterDate{
+  width:150px;
+  height:30px;
+  padding:10px;
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+  border: 1px solid var(--dark-text);
+  border-radius: 12px;
+  font-size: 16px;
+  background: var(--dark-text);
+}
 
+#themeToggle{
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  
+}
 .delete-btn {
   position: absolute;
   top: 12px;
