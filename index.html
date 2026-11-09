@@ -172,6 +172,61 @@
         </section>
       </div>
 
+      <details class="stock-book-dropdown" id="stockBookDropdown">
+        <summary class="stock-book-toggle">
+          <span><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stock book</span>
+          <i class="fa-solid fa-chevron-down stock-book-chevron" aria-hidden="true"></i>
+        </summary>
+        <section class="panel stock-panel" aria-labelledby="stockTitle">
+          <div class="stock-heading">
+            <div class="section-heading">
+              <div><p class="eyebrow">COUNT WHAT IS ON YOUR SHELVES</p><h2 id="stockTitle">Daily item balances</h2></div>
+            </div>
+            <label class="stock-search" for="stockSearch">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input id="stockSearch" type="search" placeholder="Search item name" autocomplete="off">
+            </label>
+            <div class="stock-summary" id="stockSummary">No items tracked</div>
+          </div>
+        <form id="stockForm" class="stock-form">
+          <div class="stock-form-grid">
+            <label>Stock date
+              <input id="stockDate" type="date" required>
+            </label>
+            <label>Item name
+              <input id="stockName" type="text" maxlength="100" placeholder="e.g. Mirinda juice" required>
+            </label>
+            <label>Count unit
+              <input id="stockUnit" type="text" maxlength="24" placeholder="e.g. bags" required>
+            </label>
+            <label>Starting stock
+              <input id="stockOpening" type="number" min="0" step="0.01" inputmode="decimal" placeholder="For new item">
+            </label>
+            <label>Purchased today
+              <input id="stockPurchased" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
+            </label>
+            <label>Sold today
+              <input id="stockSold" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
+            </label>
+            <label>Broken / spoiled today
+              <input id="stockDamaged" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
+            </label>
+          </div>
+          <div class="stock-form-footer">
+            <p>Each day's opening carries forward the last closing balance. Closing = opening + purchased - sold - broken / spoiled. Set starting stock once; saving again revises that day's totals. Use one unit per item.</p>
+            <button class="primary-button" type="submit"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Save daily count</button>
+          </div>
+        </form>
+        <div class="table-wrap stock-table-wrap">
+          <table class="stock-table">
+            <thead><tr><th>Date</th><th>Item</th><th>Opening</th><th>Purchased</th><th>Sold</th><th>Broken / spoiled</th><th>Closing balance</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="stockHistory"></tbody>
+          </table>
+          <div id="stockEmptyState" class="empty-state"><span class="empty-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span><strong id="stockEmptyTitle">No items tracked yet</strong><span id="stockEmptyMessage">Add an item above to start counting stock.</span></div>
+        </div>
+        </section>
+      </details>
+
       <section class="panel ledger-panel" aria-labelledby="ledgerTitle">
         <div class="ledger-heading">
           <div class="section-heading">

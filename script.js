@@ -1,5 +1,7 @@
 const STORAGE_KEY = "goodsRecords";
 const SETTINGS_KEY = "goodsTrackerSettings";
+const STOCK_KEY = "goodsStockItems";
+const STOCK_MOVEMENTS_KEY = "goodsStockMovements";
 const form = document.getElementById("form");
 const history = document.getElementById("history");
 const recordType = document.getElementById("type");
@@ -44,6 +46,28 @@ records = records.map(record => ({
 }));
 let settings = readStorage(SETTINGS_KEY, { openingBalance: 0, currency: "USD", dark: false });
 if (!settings || typeof settings !== "object") settings = { openingBalance: 0, currency: "USD", dark: false };
+let stockItems = readStorage(STOCK_KEY, []);
+if (!Array.isArray(stockItems)) stockItems = [];
+stockItems = stockItems.filter(item => item && typeof item.name === "string" && typeof item.unit === "string").map(item => ({
+  ...item,
+  id: item.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  name: item.name,
+  unit: item.unit,
+  baseStock: item.baseStock == null
+    ? (Number(item.opening) || 0) + (Number(item.purchased) || 0) - (Number(item.sold) || 0) - (Number(item.damaged) || 0)
+    : Number(item.baseStock) || 0,
+  purchased: Math.max(0, Number(item.purchased) || 0),
+  sold: Math.max(0, Number(item.sold) || 0),
+  damaged: Math.max(0, Number(item.damaged) || 0)
+}));
+let stockMovements = readStorage(STOCK_MOVEMENTS_KEY, []);
+if (!Array.isArray(stockMovements)) stockMovements = [];
+stockMovements = stockMovements.filter(entry => entry && entry.itemId != null && /^\d{4}-\d{2}-\d{2}$/.test(entry.date)).map(entry => ({
+  ...entry,
+  purchased: Math.max(0, Number(entry.purchased) || 0),
+  sold: Math.max(0, Number(entry.sold) || 0),
+  damaged: Math.max(0, Number(entry.damaged) || 0)
+}));
 let editingId = null;
 
 function saveRecords() {
@@ -52,6 +76,25 @@ function saveRecords() {
 
 function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function saveStockItems() {
+  localStorage.setItem(STOCK_KEY, JSON.stringify(stockItems));
+}
+
+function saveStockMovements() {
+  localStorage.setItem(STOCK_MOVEMENTS_KEY, JSON.stringify(stockMovements));
+}
+
+function stockOpening(item, date) {
+  return stockMovements
+    .filter(entry => entry.itemId === item.id && entry.date < date)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .reduce((balance, entry) => balance + entry.purchased - entry.sold - entry.damaged, item.baseStock);
+}
+
+function stockClosing(item, date, movement) {
+  return stockOpening(item, date) + movement.purchased - movement.sold - movement.damaged;
 }
 
 function money(value) {
@@ -198,6 +241,100 @@ function renderHistory() {
   document.getElementById("emptyState").hidden = filtered.length !== 0;
 }
 
+function renderStock() {
+  const body = document.getElementById("stockHistory");
+  body.replaceChildren();
+  const query = document.getElementById("stockSearch").value.trim().toLocaleLowerCase();
+  const visibleItems = stockItems.filter(item => item.name.toLocaleLowerCase().includes(query));
+  const selectedDate = document.getElementById("stockDate").value || localDate(today);
+  const todayEntries = new Map(stockMovements.filter(entry => entry.date === selectedDate).map(entry => [entry.itemId, entry]));
+  const needsAttention = visibleItems.filter(item => {
+    const movement = todayEntries.get(item.id) || { purchased: 0, sold: 0, damaged: 0 };
+    return stockClosing(item, selectedDate, movement) <= 0;
+  }).length;
+  document.getElementById("stockSummary").textContent = stockItems.length
+    ? query
+      ? `${visibleItems.length} of ${stockItems.length} items match`
+      : `${stockItems.length} item${stockItems.length === 1 ? "" : "s"} tracked · ${needsAttention} out of stock or short on ${selectedDate}`
+    : "No items tracked";
+  const itemById = new Map(stockItems.map(item => [item.id, item]));
+  const visibleItemIds = new Set(visibleItems.map(item => item.id));
+  const entries = stockMovements.filter(entry => visibleItemIds.has(entry.itemId)).map(entry => ({ ...entry, preview: false }));
+  for (const item of visibleItems) {
+    if (!todayEntries.has(item.id)) entries.push({ itemId: item.id, date: selectedDate, purchased: 0, sold: 0, damaged: 0, preview: true });
+  }
+  entries.sort((a, b) => b.date.localeCompare(a.date) || itemById.get(a.itemId).name.localeCompare(itemById.get(b.itemId).name));
+  const emptyState = document.getElementById("stockEmptyState");
+  emptyState.hidden = entries.length > 0;
+  document.getElementById("stockEmptyTitle").textContent = query && stockItems.length
+    ? "No matching item"
+    : "No items tracked yet";
+  document.getElementById("stockEmptyMessage").textContent = query && stockItems.length
+    ? `No stock item name contains "${document.getElementById("stockSearch").value.trim()}".`
+    : "Add an item above to start counting stock.";
+
+  for (const entry of entries) {
+    const item = itemById.get(entry.itemId);
+    const opening = stockOpening(item, entry.date);
+    const remaining = opening + entry.purchased - entry.sold - entry.damaged;
+    const row = document.createElement("tr");
+    if (entry.preview) row.classList.add("stock-row-preview");
+    if (remaining < 0) row.classList.add("stock-row-short");
+    addCell(row, new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }));
+    const nameCell = addCell(row, "", "stock-item-name");
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const unit = document.createElement("small");
+    unit.textContent = `Counted in ${item.unit}`;
+    nameCell.append(name, unit);
+    addCell(row, opening.toLocaleString());
+    addCell(row, entry.purchased.toLocaleString());
+    addCell(row, entry.sold.toLocaleString());
+    addCell(row, entry.damaged.toLocaleString());
+    addCell(row, `${remaining.toLocaleString()} ${item.unit}`, "stock-remaining");
+    const status = document.createElement("span");
+    status.className = `stock-status ${remaining < 0 ? "stock-status-short" : remaining === 0 ? "stock-status-empty" : "stock-status-ok"}`;
+    status.textContent = remaining < 0 ? `Short by ${Math.abs(remaining).toLocaleString()}` : remaining === 0 ? "Out of stock" : "In stock";
+    addCell(row, "").appendChild(status);
+    const actions = document.createElement("td");
+    actions.className = "row-actions";
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "row-action delete-action";
+    removeButton.title = "Remove item and all daily counts";
+    removeButton.setAttribute("aria-label", `Remove ${item.name} and all its daily counts`);
+    removeButton.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>';
+    removeButton.addEventListener("click", () => {
+      if (!window.confirm(`Remove ${item.name} and all its daily stock counts?`)) return;
+      stockItems = stockItems.filter(current => current.id !== item.id);
+      stockMovements = stockMovements.filter(current => current.itemId !== item.id);
+      saveStockItems();
+      saveStockMovements();
+      renderStock();
+    });
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "row-action";
+    editButton.title = "Edit daily count";
+    editButton.setAttribute("aria-label", `Edit ${item.name} count for ${entry.date}`);
+    editButton.innerHTML = '<i class="fa-solid fa-pen" aria-hidden="true"></i>';
+    editButton.addEventListener("click", () => {
+      document.getElementById("stockDate").value = entry.date;
+      document.getElementById("stockName").value = item.name;
+      document.getElementById("stockUnit").value = item.unit;
+      document.getElementById("stockOpening").value = "";
+      document.getElementById("stockPurchased").value = entry.purchased;
+      document.getElementById("stockSold").value = entry.sold;
+      document.getElementById("stockDamaged").value = entry.damaged;
+      renderStock();
+      document.getElementById("stockName").focus();
+    });
+    actions.append(editButton, removeButton);
+    row.appendChild(actions);
+    body.appendChild(row);
+  }
+}
+
 function renderComparisonChart(selectedMonth) {
   const chart = document.getElementById("comparisonChart");
   chart.replaceChildren();
@@ -312,7 +449,70 @@ function renderDashboard() {
 function render() {
   renderDashboard();
   renderHistory();
+  renderStock();
 }
+
+document.getElementById("stockForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const date = document.getElementById("stockDate").value;
+  const name = document.getElementById("stockName").value.trim();
+  const unit = document.getElementById("stockUnit").value.trim();
+  const openingInput = document.getElementById("stockOpening").value;
+  const hasOpening = openingInput !== "";
+  const opening = Number(openingInput) || 0;
+  const purchased = Number(document.getElementById("stockPurchased").value) || 0;
+  const sold = Number(document.getElementById("stockSold").value) || 0;
+  const damaged = Number(document.getElementById("stockDamaged").value) || 0;
+  if (!date || !name || !unit || opening < 0 || purchased < 0 || sold < 0 || damaged < 0) return;
+
+  const existing = stockItems.find(item =>
+    item.name.toLocaleLowerCase() === name.toLocaleLowerCase() && item.unit.toLocaleLowerCase() === unit.toLocaleLowerCase()
+  );
+  const existingMovement = existing && stockMovements.find(entry => entry.itemId === existing.id && entry.date === date);
+  if (!existing && opening + purchased + sold + damaged === 0) return;
+  if (existing && !hasOpening && !existingMovement && purchased + sold + damaged === 0) return;
+  const item = existing || { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, unit, baseStock: opening };
+  if (!existing) stockItems.push(item);
+  if (hasOpening) item.baseStock = opening;
+  const movement = {
+    id: existingMovement?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    itemId: item.id,
+    date,
+    purchased,
+    sold,
+    damaged
+  };
+  if (existingMovement) stockMovements = stockMovements.map(entry => entry.id === existingMovement.id ? movement : entry);
+  else stockMovements.push(movement);
+  saveStockItems();
+  saveStockMovements();
+  document.getElementById("stockOpening").value = "";
+  renderStock();
+});
+
+function loadStockDay() {
+  const name = document.getElementById("stockName").value.trim().toLocaleLowerCase();
+  const unit = document.getElementById("stockUnit").value.trim().toLocaleLowerCase();
+  const date = document.getElementById("stockDate").value;
+  const item = stockItems.find(current => current.name.toLocaleLowerCase() === name && current.unit.toLocaleLowerCase() === unit);
+  const movement = item && stockMovements.find(entry => entry.itemId === item.id && entry.date === date);
+  if (!movement) {
+    document.getElementById("stockOpening").value = "";
+    for (const id of ["stockPurchased", "stockSold", "stockDamaged"]) document.getElementById(id).value = "";
+    return;
+  }
+  document.getElementById("stockOpening").value = "";
+  document.getElementById("stockPurchased").value = movement.purchased;
+  document.getElementById("stockSold").value = movement.sold;
+  document.getElementById("stockDamaged").value = movement.damaged;
+}
+
+for (const id of ["stockName", "stockUnit"]) document.getElementById(id).addEventListener("change", loadStockDay);
+document.getElementById("stockDate").addEventListener("change", () => {
+  loadStockDay();
+  renderStock();
+});
+document.getElementById("stockSearch").addEventListener("input", renderStock);
 
 form.addEventListener("submit", event => {
   event.preventDefault();
@@ -376,7 +576,7 @@ document.getElementById("exportBtn").addEventListener("click", () => {
 });
 
 document.getElementById("backupBtn").addEventListener("click", () => {
-  const backup = { version: 2, exportedAt: new Date().toISOString(), records, settings };
+  const backup = { version: 5, exportedAt: new Date().toISOString(), records, stockItems, stockMovements, settings };
   downloadFile("Goodtracker-backup.json", JSON.stringify(backup, null, 2), "application/json");
 });
 
@@ -387,6 +587,8 @@ document.getElementById("backupFile").addEventListener("change", async event => 
   try {
     const parsed = JSON.parse(await file.text());
     const importedRecords = Array.isArray(parsed) ? parsed : parsed.records;
+    const importedStockItems = Array.isArray(parsed) ? [] : parsed.stockItems ?? [];
+    const importedStockMovements = Array.isArray(parsed) ? [] : parsed.stockMovements ?? [];
     const validTypes = new Set(["sale", "purchase", "expense"]);
     if (!Array.isArray(importedRecords) || importedRecords.some(record =>
       !record || typeof record !== "object" || !validTypes.has(record.type) ||
@@ -395,7 +597,22 @@ document.getElementById("backupFile").addEventListener("change", async event => 
     )) {
       throw new Error("This file does not contain a valid Goodtracker backup.");
     }
-    if (!window.confirm(`Restore ${importedRecords.length} records? This replaces the records currently in this browser.`)) return;
+    if (!Array.isArray(importedStockItems) || importedStockItems.some(item =>
+      !item || typeof item !== "object" || typeof item.name !== "string" || !item.name.trim() ||
+      typeof item.unit !== "string" || !item.unit.trim() ||
+      (item.opening != null && (!Number.isFinite(Number(item.opening)) || Number(item.opening) < 0)) ||
+      [item.purchased, item.sold, item.damaged].some(value => !Number.isFinite(Number(value)) || Number(value) < 0)
+    )) {
+      throw new Error("This file contains invalid stock counts.");
+    }
+    const itemIds = new Set(importedStockItems.map(item => item.id));
+    if (!Array.isArray(importedStockMovements) || importedStockMovements.some(entry =>
+      !entry || typeof entry !== "object" || !itemIds.has(entry.itemId) || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date) ||
+      [entry.purchased, entry.sold, entry.damaged].some(value => !Number.isFinite(Number(value)) || Number(value) < 0)
+    )) {
+      throw new Error("This file contains invalid dated stock counts.");
+    }
+    if (!window.confirm(`Restore ${importedRecords.length} records, ${importedStockItems.length} stock items and ${importedStockMovements.length} daily stock counts? This replaces the books currently in this browser.`)) return;
     records = importedRecords.map(record => ({
       ...record,
       id: record.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -408,8 +625,29 @@ document.getElementById("backupFile").addEventListener("change", async event => 
       paymentMethod: record.paymentMethod || "Cash",
       notes: record.notes || ""
     }));
+    stockItems = importedStockItems.map(item => ({
+      ...item,
+      id: item.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: item.name.trim(),
+      unit: item.unit.trim(),
+      baseStock: item.baseStock == null
+        ? (Number(item.opening) || 0) + (Number(item.purchased) || 0) - (Number(item.sold) || 0) - (Number(item.damaged) || 0)
+        : Number(item.baseStock) || 0,
+      purchased: Number(item.purchased) || 0,
+      sold: Number(item.sold) || 0,
+      damaged: Number(item.damaged) || 0
+    }));
+    stockMovements = importedStockMovements.map(entry => ({
+      ...entry,
+      id: entry.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      purchased: Number(entry.purchased) || 0,
+      sold: Number(entry.sold) || 0,
+      damaged: Number(entry.damaged) || 0
+    }));
     if (parsed.settings && typeof parsed.settings === "object") settings = { ...settings, ...parsed.settings };
     saveRecords();
+    saveStockItems();
+    saveStockMovements();
     saveSettings();
     initializeControls();
     render();
@@ -434,6 +672,7 @@ function applyTheme() {
 function initializeControls() {
   reportMonth.value = currentMonth;
   recordDate.value = localDate(today);
+  document.getElementById("stockDate").value = localDate(today);
   document.getElementById("openingBalance").value = Number(settings.openingBalance) || "";
   currencySelect.value = ["USD", "TZS", "KES", "UGX", "NGN", "GHS"].includes(settings.currency) ? settings.currency : "USD";
   settings.currency = currencySelect.value;
