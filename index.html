@@ -1,78 +1,207 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EGT</title>
+  <meta name="theme-color" content="#f3f5ef">
+  <meta name="description" content="A clear daily ledger and monthly business performance tracker.">
+  <title>Goodtracker | Business books, made clear</title>
   <link rel="stylesheet" href="style.css">
- <link rel="icon" type="image/png" href="EGT.png" />
-<!-- Open Graph Meta Tags (Facebook, WhatsApp, LinkedIn, etc.) -->
-<meta property="og:title" content="Efatha Goods Tracker - EGT" />
-<meta property="og:description" content="Track your goods and finances with clarity. EGT keeps your records accurate and accessible." />
-<meta property="og:image" content="https://efatha.github.io/Goodtracker/EGT.png" />
-<meta property="og:url" content="https://efatha.github.io/Goodtracker/" />
-<meta property="og:type" content="website" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
-
-<!-- Twitter Card Tags -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Efatha Goods Tracker - EGT" />
-<meta name="twitter:description" content="Stay on top of your goods and expenses with EGT." />
-<meta name="twitter:image" content="https://efatha.github.io/Goodtracker/EGT.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h2> Efatha Goods Tracker</h2>
-      <button id="themeToggle">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5" width="24px" class="Theme">
-          <path fill-rule="evenodd" d="M7.455 2.004a.75.75 0 0 1 .26.77 7 7 0 0 0 9.958 7.967.75.75 0 0 1 1.067.853A8.5 8.5 0 1 1 6.647 1.921a.75.75 0 0 1 .808.083Z" clip-rule="evenodd" />
-        </svg>
-        <span>Toggle Theme</span>
-      </button>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Goodtracker home">
+        <span class="brand-mark"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
+        <span><strong>Goodtracker</strong><small>DAILY BOOKS, CLEAR DECISIONS</small></span>
+      </a>
+      <div class="top-actions">
+        <label class="currency-control" for="currencySelect">Currency
+          <select id="currencySelect" aria-label="Display currency">
+            <option value="USD">USD</option>
+            <option value="TZS">TZS</option>
+            <option value="KES">KES</option>
+            <option value="UGX">UGX</option>
+            <option value="NGN">NGN</option>
+            <option value="GHS">GHS</option>
+          </select>
+        </label>
+        <button class="icon-button" id="themeToggle" type="button" title="Toggle color theme" aria-label="Toggle color theme">
+          <i class="fa-solid fa-moon" aria-hidden="true"></i>
+        </button>
+      </div>
     </header>
-    <section class="summary">
-     <div><strong>Sales:</strong> <span id="totalSales">$0.00</span></div>
-     <div><strong>Purchases:</strong> <span id="totalPurchases">$0.00</span></div>
-     <div><strong>Expenses:</strong> <span id="totalExpenses">$0.00</span></div>
-     <div><strong>Profit:</strong> <span id="profit">$0.00</span></div>
-     <div><strong>Balance:</strong> <span id="balance">$0.00</span></div>
-    </section>
-    <form id="form">
-      <input type="text" id="desc" placeholder="Item description" required />
-      <input type="text" id="customer" placeholder="Customer (optional)" />
-      <input type="number" id="amount" placeholder="Amount" required />
-      <select id="type">
-       <option value="sale">Sale</option>
-       <option value="purchase">Purchase</option>
-       <option value="expense">Expense</option>
-      </select>
-    <button type="submit">Add Record</button>
-</form>
-<section>
-  <h3>
-   <i class="fa-regular fa-calendar-days"></i>
-   <span>History</span>
-  </h3>
-  <input type="date" id="filterDate" />
-  <ul id="history"></ul>
-</section>
 
-<section class="tips">
-  <h3>
-    <i class="fa-solid fa-bell fa-square-exclamation fa-beat-fade"></i>
-    </span> Marketing Tips<span>
-  </h3>
-  <p id="marketingTip">Loading tips...</p>
-</section>
+    <main id="top">
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">YOUR BUSINESS, IN PLAIN SIGHT</p>
+          <h1>Know where you stand.</h1>
+          <p class="heading-copy">A tidy record today makes a better decision tomorrow.</p>
+        </div>
+        <label class="month-picker" for="reportMonth">
+          <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Reporting month</span>
+          <input type="month" id="reportMonth">
+        </label>
+      </section>
 
-<button id="exportBtn">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5" width="24px">
-   <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm4.75 6.75a.75.75 0 0 1 1.5 0v2.546l.943-1.048a.75.75 0 0 1 1.114 1.004l-2.25 2.5a.75.75 0 0 1-1.114 0l-2.25-2.5a.75.75 0 1 1 1.114-1.004l.943 1.048V8.75Z" clip-rule="evenodd" />
-  </svg>
-  <span>Export to CSV</span>
-</button>
-<script src="script.js"></script>
+      <section class="cash-strip" aria-label="Cash position">
+        <div class="cash-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></div>
+        <div class="cash-copy"><span>Cash position</span><strong id="cashBalance">$0.00</strong><small>Opening cash + paid-in money - paid-out money</small></div>
+        <label class="opening-cash" for="openingBalance">Opening cash
+          <input id="openingBalance" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+        </label>
+      </section>
+
+      <section class="metric-grid" aria-label="Monthly performance">
+        <article class="metric metric-revenue">
+          <div class="metric-top"><span>Sales revenue</span><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></div>
+          <strong id="revenueValue">$0.00</strong>
+          <p class="comparison" id="revenueChange">Compared with previous month</p>
+        </article>
+        <article class="metric metric-gross">
+          <div class="metric-top"><span>Gross profit</span><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></div>
+          <strong id="grossValue">$0.00</strong>
+          <p class="comparison" id="grossChange">Sales less direct costs</p>
+        </article>
+        <article class="metric metric-expenses">
+          <div class="metric-top"><span>Operating expenses</span><i class="fa-solid fa-receipt" aria-hidden="true"></i></div>
+          <strong id="expenseValue">$0.00</strong>
+          <p class="comparison" id="expenseChange">Compared with previous month</p>
+        </article>
+        <article class="metric metric-net">
+          <div class="metric-top"><span>Net profit</span><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
+          <strong id="netValue">$0.00</strong>
+          <p class="comparison" id="netChange">Gross profit less expenses</p>
+        </article>
+      </section>
+
+      <div class="content-grid">
+        <section class="panel entry-panel" aria-labelledby="entryTitle">
+          <div class="section-heading">
+            <div><p class="eyebrow">KEEP THE LEDGER CURRENT</p><h2 id="entryTitle">Add a record</h2></div>
+            <span class="section-icon"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></span>
+          </div>
+          <form id="form">
+            <div class="field-row">
+              <label>Record type
+                <select id="type">
+                  <option value="sale">Sale received / due</option>
+                  <option value="purchase">Goods purchase</option>
+                  <option value="expense">Business expense</option>
+                </select>
+              </label>
+              <label>Date
+                <input type="date" id="recordDate" required>
+              </label>
+            </div>
+            <label>Description
+              <input type="text" id="desc" maxlength="120" placeholder="e.g. 3 bags of rice" required>
+            </label>
+            <div class="field-row field-row-party">
+              <label for="party"><span id="partyLabel">Customer</span>
+                <input type="text" id="party" maxlength="100" placeholder="Name (optional)">
+              </label>
+              <label>Amount
+                <input type="number" id="amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required>
+              </label>
+            </div>
+            <div class="field-row conditional-row" id="purchaseFields" hidden>
+              <label>Purchase treatment
+                <select id="purchaseKind">
+                  <option value="inventory">Inventory stock (not expensed yet)</option>
+                  <option value="direct">Direct cost (used to make the sale)</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row conditional-row" id="expenseFields" hidden>
+              <label>Expense category
+                <select id="category">
+                  <option value="Rent">Rent</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Wages">Wages</option>
+                  <option value="Supplies">Supplies</option>
+                  <option value="Repairs">Repairs</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label>Payment status
+                <select id="paymentStatus">
+                  <option value="paid">Paid / collected</option>
+                  <option value="unpaid">Unpaid / due</option>
+                </select>
+              </label>
+              <label>Payment method
+                <select id="paymentMethod">
+                  <option value="Cash">Cash</option>
+                  <option value="Mobile money">Mobile money</option>
+                  <option value="Bank">Bank</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+            </div>
+            <label class="notes-label">Note <span>Optional</span>
+              <input type="text" id="notes" maxlength="180" placeholder="Reference, details or reminder">
+            </label>
+            <div class="form-actions">
+              <button class="primary-button" type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i><span id="submitLabel">Add to books</span></button>
+              <button class="text-button" id="cancelEdit" type="button" hidden>Cancel edit</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel report-panel" aria-labelledby="reportTitle">
+          <div class="section-heading">
+            <div><p class="eyebrow">SEE THE DIRECTION</p><h2 id="reportTitle">Month at a glance</h2></div>
+            <span class="compare-tag"><i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i> vs. previous month</span>
+          </div>
+          <div class="chart-legend"><span><i class="legend-sales"></i> Sales</span><span><i class="legend-outflow"></i> Paid out</span></div>
+          <div class="bar-chart" id="comparisonChart" role="img" aria-label="Six month comparison of sales and paid out"></div>
+          <div class="expense-heading"><h3>Expense mix</h3><span id="expensePeriodLabel"></span></div>
+          <div id="expenseBreakdown" class="expense-breakdown"></div>
+          <p class="accounting-note">Inventory purchases affect cash, but are not counted as profit costs until sold. Record direct costs separately.</p>
+          <p class="smart-note" id="smartNote"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i><span>Record transactions to see business highlights here.</span></p>
+        </section>
+      </div>
+
+      <section class="panel ledger-panel" aria-labelledby="ledgerTitle">
+        <div class="ledger-heading">
+          <div class="section-heading">
+            <div><p class="eyebrow">EVERY SHILLING, ACCOUNTED FOR</p><h2 id="ledgerTitle">Recent records</h2></div>
+          </div>
+          <div class="ledger-tools">
+            <label class="search-box"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="searchRecords" type="search" placeholder="Find a record" aria-label="Search records"></label>
+            <label class="date-filter" for="filterDate">Exact date<input type="date" id="filterDate"></label>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Record</th><th>Category / person</th><th>Status</th><th class="amount-column">Amount</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="history"></tbody>
+          </table>
+          <div id="emptyState" class="empty-state" hidden><span class="empty-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span><strong>No records found</strong><span>Add your first entry or change the search filters.</span></div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <p><i class="fa-solid fa-lock" aria-hidden="true"></i> Your books stay in this browser. Download a backup regularly.</p>
+        <div class="footer-actions">
+          <button class="utility-button" id="exportBtn" type="button"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Export CSV</button>
+          <button class="utility-button" id="backupBtn" type="button"><i class="fa-solid fa-download" aria-hidden="true"></i> Backup books</button>
+          <button class="utility-button" id="restoreBtn" type="button"><i class="fa-solid fa-upload" aria-hidden="true"></i> Restore backup</button>
+          <input id="backupFile" type="file" accept="application/json,.json" hidden>
+        </div>
+      </footer>
+    </main>
   </div>
+  <script src="script.js"></script>
 </body>
 </html>
