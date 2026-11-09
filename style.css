@@ -12,9 +12,11 @@
   --coral: #c85c45;
   --coral-soft: #fff0e9;
   --gold: #d39a3c;
-  --blue: #477d9a;
+  --blue: #176f9f;
+  --blue-soft: #e7f2f8;
   --shadow: 0 12px 32px rgba(34, 54, 35, 0.06);
   --radius: 8px;
+  --theme-transition: 360ms ease;
 }
 
 * { box-sizing: border-box; }
@@ -23,12 +25,22 @@ body {
   margin: 0;
   min-width: 320px;
   color: var(--text);
-  background:
-    radial-gradient(ellipse at 7% 0%, rgba(196, 218, 180, 0.42), transparent 34rem),
-    linear-gradient(145deg, #f8f8f3 0%, var(--page) 52%, #edf2e8 100%);
+  background-color: var(--page);
+  background-image:
+    radial-gradient(ellipse at 7% 0%, rgba(77, 144, 180, 0.12), transparent 34rem),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 58%);
   font-family: "DM Sans", sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  transition: background-color var(--theme-transition), color var(--theme-transition);
+}
+
+.topbar, .panel, .metric, .cash-strip, .brand-mark, .icon-button,
+.currency-control select, .month-picker input, #form input, #form select,
+.section-icon, .smart-note, .utility-button, .search-box, .date-filter input,
+.expense-track, .status-pill {
+  transition: background-color var(--theme-transition), color var(--theme-transition),
+    border-color var(--theme-transition), box-shadow var(--theme-transition);
 }
 
 button, input, select { font: inherit; }
@@ -77,6 +89,7 @@ h1 { margin-bottom: 5px; font-size: 32px; font-weight: 800; line-height: 1.2; }
 .metric:nth-child(2) { animation-delay: .05s; border-top-color: var(--blue); }
 .metric:nth-child(3) { animation-delay: .1s; border-top-color: var(--coral); }
 .metric:nth-child(4) { animation-delay: .15s; border-top-color: var(--gold); }
+.metric-gross > strong { color: var(--blue); }
 .metric-top { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 600; }
 .metric-top i { color: var(--green); }
 .metric-gross .metric-top i { color: var(--blue); }
@@ -93,7 +106,7 @@ h1 { margin-bottom: 5px; font-size: 32px; font-weight: 800; line-height: 1.2; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
 .section-heading .eyebrow { margin-bottom: 4px; }
 h2 { margin: 0; font-size: 19px; font-weight: 800; }
-.section-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 6px; color: var(--green); background: var(--green-soft); }
+.section-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 6px; color: var(--blue); background: var(--blue-soft); }
 #form { display: grid; gap: 13px; }
 #form label { display: grid; gap: 6px; min-width: 0; color: #586356; font-size: 11px; font-weight: 700; }
 #form input, #form select { width: 100%; min-width: 0; height: 39px; padding: 0 10px; border: 1px solid var(--line); border-radius: 5px; color: var(--text); background: var(--surface); font-size: 12px; font-weight: 500; }
@@ -187,9 +200,9 @@ td { padding: 11px 10px; border-top: 1px solid var(--line); color: #5f695d; font
   --coral: #ed8b72;
   --coral-soft: #503b35;
   --gold: #e1b45e;
-  --blue: #82b4cb;
+  --blue: #8bc9e7;
+  --blue-soft: #294653;
   --shadow: 0 12px 30px rgba(0, 0, 0, .14);
-  background: radial-gradient(ellipse at 7% 0%, #2e3b2e, transparent 34rem), #202720;
 }
 .dark .cash-strip { background: #1d472f; }
 .dark #form label, .dark .expense-line-label, .dark td { color: #c4cdc0; }
