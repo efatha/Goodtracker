@@ -8,7 +8,6 @@ const recordType = document.getElementById("type");
 const recordDate = document.getElementById("recordDate");
 const amountInput = document.getElementById("amount");
 const partyInput = document.getElementById("party");
-const filterDate = document.getElementById("filterDate");
 const reportMonth = document.getElementById("reportMonth");
 const currencySelect = document.getElementById("currencySelect");
 const expenseCategories = ["Rent", "Transport", "Utilities", "Wages", "Supplies", "Repairs", "Other"];
@@ -33,7 +32,8 @@ function readStorage(key, fallback) {
 
 let records = readStorage(STORAGE_KEY, []);
 if (!Array.isArray(records)) records = [];
-records = records.map(record => ({
+const savedRecordCount = records.length;
+records = records.filter(record => record && record.type !== "savings").map(record => ({
   ...record,
   amount: Number(record.amount) || 0,
   date: record.date || currentMonth + "-01",
@@ -44,6 +44,7 @@ records = records.map(record => ({
   paymentMethod: record.paymentMethod || "Cash",
   notes: record.notes || ""
 }));
+if (records.length !== savedRecordCount) localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 let settings = readStorage(SETTINGS_KEY, { openingBalance: 0, currency: "USD", dark: false });
 if (!settings || typeof settings !== "object") settings = { openingBalance: 0, currency: "USD", dark: false };
 let stockItems = readStorage(STOCK_KEY, []);
@@ -146,8 +147,16 @@ function updateTypeFields() {
   const isExpense = recordType.value === "expense";
   document.getElementById("purchaseFields").hidden = !isPurchase;
   document.getElementById("expenseFields").hidden = !isExpense;
-  document.getElementById("partyLabel").textContent = recordType.value === "sale" ? "Customer" : recordType.value === "purchase" ? "Supplier" : "Paid to";
-  partyInput.placeholder = recordType.value === "sale" ? "Customer name (optional)" : recordType.value === "purchase" ? "Supplier name (optional)" : "Payee (optional)";
+  document.getElementById("partyLabel").textContent = recordType.value === "sale"
+    ? "Customer"
+    : recordType.value === "purchase"
+      ? "Supplier"
+      : "Paid to";
+  partyInput.placeholder = recordType.value === "sale"
+    ? "Customer name (optional)"
+    : recordType.value === "purchase"
+      ? "Supplier name (optional)"
+      : "Payee (optional)";
 }
 
 function resetForm() {
@@ -188,18 +197,28 @@ function addCell(row, text, className = "") {
 function renderHistory() {
   history.replaceChildren();
   const query = document.getElementById("searchRecords").value.trim().toLocaleLowerCase();
-  const date = filterDate.value;
+  const dateFrom = document.getElementById("filterDateFrom").value;
+  const dateTo = document.getElementById("filterDateTo").value;
+  const type = document.getElementById("filterType").value;
   const filtered = records.filter(record => {
-    const content = [record.desc, record.party, record.category, record.notes, record.type].join(" ").toLocaleLowerCase();
-    return (!date || record.date === date) && (!query || content.includes(query));
+    const typeLabel = record.type === "sale" ? "sale" : record.type === "purchase" ? "purchase" : "expense";
+    const content = [record.date, record.desc, record.party, record.category, record.notes, record.type, typeLabel, record.paymentStatus, record.paymentMethod]
+      .join(" ").toLocaleLowerCase();
+    return (!dateFrom || record.date >= dateFrom) &&
+      (!dateTo || record.date <= dateTo) &&
+      (!type || record.type === type) &&
+      (!query || content.includes(query));
   }).sort((a, b) => b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id)));
 
   for (const record of filtered) {
     const row = document.createElement("tr");
-    const typeLabel = record.type === "sale" ? "Sale" : record.type === "purchase" ? "Purchase" : "Expense";
+    const typeLabel = record.type === "sale" ? "Sale"
+      : record.type === "purchase" ? "Purchase"
+        : "Expense";
     const detail = record.type === "purchase"
       ? (record.purchaseKind === "inventory" ? "Inventory stock" : "Direct cost")
-      : record.type === "expense" ? record.category || "Other" : "Sales";
+      : record.type === "expense" ? record.category || "Other"
+        : "Sales";
     addCell(row, new Date(`${record.date}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }));
     const descriptionCell = addCell(row, "", "record-description");
     const description = document.createElement("strong");
@@ -245,35 +264,56 @@ function renderStock() {
   const body = document.getElementById("stockHistory");
   body.replaceChildren();
   const query = document.getElementById("stockSearch").value.trim().toLocaleLowerCase();
-  const visibleItems = stockItems.filter(item => item.name.toLocaleLowerCase().includes(query));
+  const dateFrom = document.getElementById("stockDateFrom").value;
+  const dateTo = document.getElementById("stockDateTo").value;
+  const movementType = document.getElementById("stockTypeFilter").value;
   const selectedDate = document.getElementById("stockDate").value || localDate(today);
   const todayEntries = new Map(stockMovements.filter(entry => entry.date === selectedDate).map(entry => [entry.itemId, entry]));
-  const needsAttention = visibleItems.filter(item => {
+  const needsAttention = stockItems.filter(item => {
     const movement = todayEntries.get(item.id) || { purchased: 0, sold: 0, damaged: 0 };
     return stockClosing(item, selectedDate, movement) <= 0;
   }).length;
-  document.getElementById("stockSummary").textContent = stockItems.length
-    ? query
-      ? `${visibleItems.length} of ${stockItems.length} items match`
-      : `${stockItems.length} item${stockItems.length === 1 ? "" : "s"} tracked · ${needsAttention} out of stock or short on ${selectedDate}`
-    : "No items tracked";
   const itemById = new Map(stockItems.map(item => [item.id, item]));
-  const visibleItemIds = new Set(visibleItems.map(item => item.id));
-  const entries = stockMovements.filter(entry => visibleItemIds.has(entry.itemId)).map(entry => ({ ...entry, preview: false }));
-  for (const item of visibleItems) {
-    if (!todayEntries.has(item.id)) entries.push({ itemId: item.id, date: selectedDate, purchased: 0, sold: 0, damaged: 0, preview: true });
+  const entries = stockMovements.map(entry => ({ ...entry, preview: false }));
+  for (const item of stockItems) {
+    if (!todayEntries.has(item.id) && !movementType) {
+      entries.push({ itemId: item.id, date: selectedDate, purchased: 0, sold: 0, damaged: 0, preview: true });
+    }
   }
-  entries.sort((a, b) => b.date.localeCompare(a.date) || itemById.get(a.itemId).name.localeCompare(itemById.get(b.itemId).name));
+  const filteredEntries = entries.filter(entry => {
+    const item = itemById.get(entry.itemId);
+    if (!item || (dateFrom && entry.date < dateFrom) || (dateTo && entry.date > dateTo)) return false;
+    if (movementType && entry[movementType] <= 0) return false;
+    const opening = stockOpening(item, entry.date);
+    const remaining = opening + entry.purchased - entry.sold - entry.damaged;
+    const status = remaining < 0 ? "short" : remaining === 0 ? "out of stock" : "in stock";
+    const formattedDate = new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    const movementLabels = [
+      entry.purchased > 0 ? "purchased purchase" : "",
+      entry.sold > 0 ? "sold sale" : "",
+      entry.damaged > 0 ? "damaged broken spoiled" : ""
+    ];
+    const content = [
+      entry.date, formattedDate, item.name, item.unit, opening, entry.purchased, entry.sold, entry.damaged, remaining, status, ...movementLabels
+    ].join(" ").toLocaleLowerCase();
+    return !query || content.includes(query);
+  }).sort((a, b) => b.date.localeCompare(a.date) || itemById.get(a.itemId).name.localeCompare(itemById.get(b.itemId).name));
+  const hasFilters = Boolean(query || dateFrom || dateTo || movementType);
+  document.getElementById("stockSummary").textContent = hasFilters
+    ? `${filteredEntries.length} matching stock count${filteredEntries.length === 1 ? "" : "s"}`
+    : stockItems.length
+      ? `${stockItems.length} item${stockItems.length === 1 ? "" : "s"} tracked · ${needsAttention} out of stock or short on ${selectedDate}`
+      : "No items tracked";
   const emptyState = document.getElementById("stockEmptyState");
-  emptyState.hidden = entries.length > 0;
-  document.getElementById("stockEmptyTitle").textContent = query && stockItems.length
-    ? "No matching item"
+  emptyState.hidden = filteredEntries.length > 0;
+  document.getElementById("stockEmptyTitle").textContent = hasFilters && stockItems.length
+    ? "No matching stock counts"
     : "No items tracked yet";
-  document.getElementById("stockEmptyMessage").textContent = query && stockItems.length
-    ? `No stock item name contains "${document.getElementById("stockSearch").value.trim()}".`
+  document.getElementById("stockEmptyMessage").textContent = hasFilters && stockItems.length
+    ? "Try a different search word, date range or movement type."
     : "Add an item above to start counting stock.";
 
-  for (const entry of entries) {
+  for (const entry of filteredEntries) {
     const item = itemById.get(entry.itemId);
     const opening = stockOpening(item, entry.date);
     const remaining = opening + entry.purchased - entry.sold - entry.damaged;
@@ -513,6 +553,9 @@ document.getElementById("stockDate").addEventListener("change", () => {
   renderStock();
 });
 document.getElementById("stockSearch").addEventListener("input", renderStock);
+for (const id of ["stockTypeFilter", "stockDateFrom", "stockDateTo"]) {
+  document.getElementById(id).addEventListener("change", renderStock);
+}
 
 form.addEventListener("submit", event => {
   event.preventDefault();
@@ -539,7 +582,9 @@ form.addEventListener("submit", event => {
 
 recordType.addEventListener("change", updateTypeFields);
 document.getElementById("cancelEdit").addEventListener("click", resetForm);
-filterDate.addEventListener("change", renderHistory);
+for (const id of ["filterDateFrom", "filterDateTo", "filterType"]) {
+  document.getElementById(id).addEventListener("change", renderHistory);
+}
 document.getElementById("searchRecords").addEventListener("input", renderHistory);
 reportMonth.addEventListener("change", render);
 document.getElementById("openingBalance").addEventListener("change", event => {
@@ -589,7 +634,7 @@ document.getElementById("backupFile").addEventListener("change", async event => 
     const importedRecords = Array.isArray(parsed) ? parsed : parsed.records;
     const importedStockItems = Array.isArray(parsed) ? [] : parsed.stockItems ?? [];
     const importedStockMovements = Array.isArray(parsed) ? [] : parsed.stockMovements ?? [];
-    const validTypes = new Set(["sale", "purchase", "expense"]);
+    const validTypes = new Set(["sale", "purchase", "expense", "savings"]);
     if (!Array.isArray(importedRecords) || importedRecords.some(record =>
       !record || typeof record !== "object" || !validTypes.has(record.type) ||
       !Number.isFinite(Number(record.amount)) || Number(record.amount) <= 0 ||
@@ -612,8 +657,11 @@ document.getElementById("backupFile").addEventListener("change", async event => 
     )) {
       throw new Error("This file contains invalid dated stock counts.");
     }
-    if (!window.confirm(`Restore ${importedRecords.length} records, ${importedStockItems.length} stock items and ${importedStockMovements.length} daily stock counts? This replaces the books currently in this browser.`)) return;
-    records = importedRecords.map(record => ({
+    const importedSavingsCount = importedRecords.filter(record => record.type === "savings").length;
+    const importedRecordCount = importedRecords.length - importedSavingsCount;
+    const savingsNotice = importedSavingsCount ? ` ${importedSavingsCount} old savings record${importedSavingsCount === 1 ? " will" : "s will"} be discarded.` : "";
+    if (!window.confirm(`Restore ${importedRecordCount} records, ${importedStockItems.length} stock items and ${importedStockMovements.length} daily stock counts?${savingsNotice} This replaces the books currently in this browser.`)) return;
+    records = importedRecords.filter(record => record.type !== "savings").map(record => ({
       ...record,
       id: record.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       amount: Number(record.amount),

@@ -58,7 +58,7 @@
         </label>
       </section>
 
-      <section class="metric-grid" aria-label="Monthly performance">
+      <section class="metric-grid" aria-label="Business performance and outstanding debt">
         <article class="metric metric-revenue">
           <div class="metric-top"><span>Sales revenue</span><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></div>
           <strong id="revenueValue">$0.00</strong>
@@ -75,9 +75,9 @@
           <p class="comparison" id="expenseChange">Compared with previous month</p>
         </article>
         <article class="metric metric-net">
-          <div class="metric-top"><span>Net profit</span><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
+          <div class="metric-top"><span>Net income</span><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
           <strong id="netValue">$0.00</strong>
-          <p class="comparison" id="netChange">Gross profit less expenses</p>
+          <p class="comparison" id="netChange">Gross profit minus operating expenses</p>
         </article>
       </section>
 
@@ -184,9 +184,25 @@
             </div>
             <label class="stock-search" for="stockSearch">
               <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-              <input id="stockSearch" type="search" placeholder="Search item name" autocomplete="off">
+              <input id="stockSearch" type="search" placeholder="Search stock records" aria-label="Search stock by word, date or count" autocomplete="off">
             </label>
             <div class="stock-summary" id="stockSummary">No items tracked</div>
+          </div>
+          <div class="stock-filters">
+            <label class="stock-filter-type" for="stockTypeFilter">Movement type
+              <select id="stockTypeFilter">
+                <option value="">All types</option>
+                <option value="purchased">Purchased</option>
+                <option value="sold">Sold</option>
+                <option value="damaged">Broken / spoiled</option>
+              </select>
+            </label>
+            <label class="stock-filter-date" for="stockDateFrom">From
+              <input id="stockDateFrom" type="date">
+            </label>
+            <label class="stock-filter-date" for="stockDateTo">To
+              <input id="stockDateTo" type="date">
+            </label>
           </div>
         <form id="stockForm" class="stock-form">
           <div class="stock-form-grid">
@@ -234,7 +250,16 @@
           </div>
           <div class="ledger-tools">
             <label class="search-box"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="searchRecords" type="search" placeholder="Find a record" aria-label="Search records"></label>
-            <label class="date-filter" for="filterDate">Exact date<input type="date" id="filterDate"></label>
+            <label class="filter-control" for="filterType">Transaction type
+              <select id="filterType">
+                <option value="">All types</option>
+                <option value="sale">Sale</option>
+                <option value="purchase">Purchase</option>
+                <option value="expense">Expense</option>
+              </select>
+            </label>
+            <label class="date-filter" for="filterDateFrom">From<input type="date" id="filterDateFrom"></label>
+            <label class="date-filter" for="filterDateTo">To<input type="date" id="filterDateTo"></label>
           </div>
         </div>
         <div class="table-wrap">
